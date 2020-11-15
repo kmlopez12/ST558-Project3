@@ -1,0 +1,38 @@
+---
+title: "Project 3"
+author: "Karen Lopez"
+date: "11/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read in Data
+
+Data from these 2 sites: <https://www.kaggle.com/nickhould/craft-cans?select=beers.csv> and <https://www.kaggle.com/nickhould/craft-cans?select=breweries.csv>.
+
+```{r getData}
+library(tidyverse)
+beers <- read_csv(file = "/Users/klopez/Dropbox (UNC Charlotte)/!ST558_NCSU/Project3/beers.csv")
+breweries <- read_csv(file = "/Users/klopez/Dropbox (UNC Charlotte)/!ST558_NCSU/Project3/breweries.csv")
+
+
+breweries <- breweries %>% rename(brewery_id = X1)
+beers
+breweries
+```
+
+## Join Data
+
+You can also embed plots, for example:
+
+```{r joinData}
+beer <- full_join(beers, breweries, by = "brewery_id")
+beer <- beer %>% rename(beer_name = name.x, brewery_name = name.y)
+beer
+
+library(readr)
+write_csv(beer, "/Users/klopez/Dropbox (UNC Charlotte)/!ST558_NCSU/Project3/ST558-Project3/beer.csv", append = FALSE)
+```
