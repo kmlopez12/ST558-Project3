@@ -128,9 +128,20 @@ ui <- dashboardPage(skin="purple",
                                     fluidRow(
                                         column(width=4,
                                                box(width=12,
-                                                   title="",
-                                                   background="purple"
-                                                   
+                                                   title="Modeling Options",
+                                                   background="purple",
+                                                   #parameters for user to change
+                                                   radioButtons("model","Select Model", choices = c("Classification via ABV", "Regression via Style")),
+                                                   conditionalPanel(condition = "input.model == 'Classification via ABV'",
+                                                                    selectInput("classReponse", "Classification Response", choices = c("Brewery", "Style"))),
+                                                   conditionalPanel(condition = "input.model == 'Regression via Style'", 
+                                                                    selectInput("regResponse", "Regression Response", choices = c("Brewery", "ABV"))),
+                                                   numericInput("trees", "Number of Trees", min=1, max=10, value=2),
+                                                   #add checkbox for prediction
+                                                   checkboxInput("prediction", h5("Turn on Prediction", style = "color:white;", value=0)),
+                                                   #add conditionalPanel for predictor
+                                                   conditionalPanel(condition = "input.prediction == 1",
+                                                                    numericInput("predictor", h5("Number for Prediction", value=0, style = "color:white;"),min=0.01, max=10.00, value=1.00))
                                                )
                                         ),
                                         column(width=8,
@@ -200,18 +211,18 @@ server <- shinyServer(function(input, output) {
         
     })
     
-    #create helper functions for cluster plot based on input
-    subData <- reactive({
-        beerData[, c(input$xvar, input$yvar)] %>% na.omit()
-    })
-    
-    #use input to create cluster count
-    clusters <- reactive({
-        kmeans(subData(), input$clusterCount)
-    })
-    
     #create cluster plot
     output$clusterP <- renderPlot({
+        
+        #subset data based on input
+        subData <- reactive({
+            beerData[, c(input$xvar, input$yvar)] %>% na.omit()
+        })
+        
+        #use input to create cluster count
+        clusters <- reactive({
+            kmeans(subData(), input$clusterCount)
+        })
         
         #create color palette & plot, modified code from clustering lecture 
         palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
@@ -221,8 +232,37 @@ server <- shinyServer(function(input, output) {
         
     })
     
-    #create model
-    #ABV to predict style? style to predict brewery?
+    #create models
+    output$modelP <- renderPlot({
+        
+        #
+        #input$model
+        #choices = c("Classification via ABV", "Regression via Style")
+        
+        #input$classResponse
+        #choices = c("Brewery", "Style")
+        
+        #input$regResponse
+        #choices = c("Brewery", "ABV")
+        
+        #
+        #input$trees
+        
+        #add checkbox for prediction
+        if(input$prediction){
+            
+        } else {
+            
+        }
+        
+        #add option for predictor, conditional on prediction
+        if(input$predictor){
+            
+        } else {
+            
+        }
+        
+    })
     
     #create output file
     
