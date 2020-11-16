@@ -143,7 +143,10 @@ ui <- dashboardPage(skin="purple",
                                                    checkboxInput("prediction", h5("Turn on Prediction", style = "color:white;", value=0)),
                                                    #add conditionalPanel for predictor
                                                    conditionalPanel(condition = "input.prediction == 1",
-                                                                    numericInput("predictor", h5("Number for Prediction", value=0, style = "color:white;"),min=0.01, max=10.00, value=1.00))
+                                                                    numericInput("predictor", h5("Number for Prediction", value=0, style = "color:white;"),min=0.01, max=10.00, value=1.00),
+                                                                    box(width=12,
+                                                                        h4("Prediction"),
+                                                                        tableOutput("prediction")))
                                                )
                                         ),
                                         column(width=8,
@@ -261,7 +264,7 @@ server <- shinyServer(function(input, output) {
         
         #create tree model based on user input
         if(input$model=="Classification via ABV"){
-            #classification tree model
+            #classification tree model & plot
             predictor <- "abv"
             treeFit <- tree(input$classResponse ~ abv, data = beerData)
             plot(treeFit)
@@ -272,18 +275,18 @@ server <- shinyServer(function(input, output) {
             treeFit <- randomForest(input$regResponse ~ style, data = beerTrain, mtry = ncol(beerTrain)/3, ntree = input$trees, importance = TRUE)
         }
         
+    })
+    
+    #create prediction
+    output$prediction <- renderTable({
         #add option for predictor, conditional on prediction
-#        if(input$predictor){
-#            predict(treeFit, newData = data.frame(predictor = input$predictor))
-#            predict(treeFit, newData = dplyr::select(beerTrain, -input$regResponse))
-#        } else {
+        if(input$predictor && input$model=="Classification via ABV"){
+            predict(treeFit, newData = data.frame(predictor = input$predictor))
+        } else if(input$predictor && input$model=="Regression via Style"){    
+            predict(treeFit, newData = dplyr::select(beerTrain, -input$regResponse))
+        } else {
             
-#        }
-        
-        #create tree plot
-        plot(treeFit)
-        text(treeFit)
-        
+        }
     })
     
     #create output file
