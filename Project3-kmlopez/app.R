@@ -105,15 +105,18 @@ ui <- dashboardPage(skin="purple",
                             #cluster tab layout      
                             tabItem(tabName = "cluster",
                                     fluidRow(
-                                        column(width=4,
+                                        column(width=3,
                                                box(width=12,
-                                                   title="Cluster plot",
+                                                   title="k-means Clustering",
                                                    background="purple",
+                                                   selectInput("xvar","X Variable", choices = c("abv","ibu","id","brewery_id", "ounces")),
+                                                   selectInput("yvar","Y Variable", choices = c("abv","ibu","id","brewery_id", "ounces")),
+                                                   numericInput("clusterCount", "Cluster Count", min=1, max=9, value=5)
                                                )
                                         ),
-                                        column(width=8,
+                                        column(width=9,
                                                box(width=12,
-                                                   plotOutput("cluster"),
+                                                   plotOutput("clusterP"),
                                                    br(),
                                                    h4("Cluster plot")
                                                )
@@ -154,18 +157,12 @@ server <- shinyServer(function(input, output) {
     #create numeric summary
     output$numSum<-renderTable({
         
-        #get value from input
-        #state <- input$state
-        
-        #set default if not supplied
-        #if (is.na(state)){state<-"NC"}
-        
         #create function to get data based on input
         getData <- reactive({
             newData <- beerData %>% filter(state == input$state) %>% select(style) %>% na.omit()
         })
         
-        #x <- beerData %>% filter(state==state) %>% select(style) %>% na.omit() 
+        #generate table
         table(getData())
         
     })
@@ -189,6 +186,31 @@ server <- shinyServer(function(input, output) {
         hist(x=x, breaks = binNum, main="Distribution of Alcohol By Volume",xlab="ABV", ylab="Count",type="l")
         
     })
+    
+    #create helper functions for cluster plot based on input
+    subData <- reactive({
+        beerData[, c(input$xvar, input$yvar)] %>% na.omit()
+    })
+    
+    #use input to create cluster count
+    clusters <- reactive({
+        kmeans(subData(), input$clusterCount)
+    })
+    
+    #create cluster plot
+    output$clusterP <- renderPlot({
+        
+        #create color palette & plot, modified code from clustering lecture 
+        palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+        par(mar = c(4, 4, 1, 1)) #set plot margins
+        plot(subData(), col = clusters()$cluster, pch = 20, cex = 3, main="k-means Clustering Analysis")
+        points(clusters()$centers, pch = 1, cex = 1, lwd = 1)
+        
+    })
+    
+    #create model
+    
+    #create output file
     
 })
 
