@@ -5,7 +5,7 @@ final exam project
 
 code to add all packages:  
 
-library(c("shiny", ""))  
+library(c("shiny", "shinydashboard", "tidyverse"))  
 
 ### Run repo
 
@@ -22,5 +22,4 @@ We will run your app from gitHub using RStudio so make sure it is set up correct
 
 Be sure to have a section on your readme page that includes all packages required for the app to work. You should have a line that would install all the packages used (so we can easily grab that and run it prior to running your app).  
 
-You should also include a line of code on the readme that we can copy and paste that will run your repo from RStudio. You should check that this works with an “empty” version of RStudio (that is, one that doesn’t have objects you’ve already created existing in your environment). You want to make sure anyone can run
-the app using the code!
+You should also include a line of code on the readme that we can copy and paste that will run your repo from RStudio. You should check that this works with an “empty” version of RStudio (that is, one that doesn’t have objects you’ve already created existing in your environment). You want to make sure anyone can run the app using the code!

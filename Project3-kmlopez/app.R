@@ -1,35 +1,53 @@
-#HW15 Karen Lopez Nov. 10, 2020
-#code from video 3 to practice exporting a shiny docker container
+#Project 3 Karen Lopez Nov. 18, 2020
+#code from video 3 used as template for shiny app practice
+#ABV to predict style? style to predict brewery?
 
 library(shiny)
 library(shinydashboard)
+library(tidyverse)
+beerData <- read_csv("../beer.csv")
+beerData <- beerData %>% na.omit()
 
-ui <- dashboardPage(skin="red",
+ui <- dashboardPage(skin="purple",
                     
                     #add title
-                    dashboardHeader(title="Posterior Distribution for Coin Example",titleWidth=1000),
+                    dashboardHeader(title="Analysis of Beer Data",titleWidth=1000),
                     
-                    #define sidebar items
+                    #create sidebar items
                     dashboardSidebar(sidebarMenu(
-                        menuItem("About", tabName = "about", icon = icon("archive")),
-                        menuItem("Application", tabName = "app", icon = icon("laptop"))
+                        menuItem("Information", tabName = "about", icon = icon("archive")),
+                        menuItem("Data Exploration", tabName = "app", icon = icon("laptop")),
+                        menuItem("Clustering Analysis", tabName = "cluster", icon = icon("laptop")),
+                        menuItem("Data Modeling", tabName = "model", icon = icon("laptop")),
+                        menuItem("Exporting Data", tabName = "export", icon = icon("laptop"))
                     )),
                     
-                    #define the body of the app
+                    #define app body
                     dashboardBody(
                         tabItems(
-                            # First tab content
+                            #about tab content
                             tabItem(tabName = "about",
                                     fluidRow(
                                         #add in latex functionality if needed
                                         withMathJax(),
                                         
-                                        #two columns for each of the two items
-                                        column(6,
-                                               #Description of App
-                                               h1("What does this app do?"),
+                                        #three columns for each of the three info items
+                                        column(4,
+                                               #description of App
+                                               h1("About the Data"),
                                                #box to contain description
-                                               box(background="red",width=12,
+                                               box(background="purple",width=12,
+                                                   h4("This data contains over 2000 canned craft beers and over 500 breweries in the US. Two data sets were downloaded from kaggle.com and then combined into one larger data set for this application."),
+                                                   h4("The prior distribution is assumed to be a Beta distribution and the likelihood is a Binomial distribution with 30 trials (of which you can change the number of successes).  This yields a Beta distribution as the posterior. Note: As the prior distribution is in the same family as the posterior, we say the prior is conjugate for the likelihood."),
+                                                   h4("The goal of the example is to update our belief about the parameter \\(\\Theta\\) = the probability of obtaining a head when a particular coin is flipped.  The experiment is to flip the coin 30 times and observe the number of heads. The likelihood is then a binomial distribution. The prior is assumed to be a Beta distribution.")
+                                               )
+                                        ),
+                                        
+                                        column(4,
+                                               #purpose of app
+                                               h1("Purpose of the App"),
+                                               #box to contain purpose
+                                               box(background="purple",width=12,
                                                    h4("This application shows the relationship between the prior distribution and the posterior distribution for a simple Bayesian model."),
                                                    h4("The prior distribution is assumed to be a Beta distribution and the likelihood is a Binomial distribution with 30 trials (of which you can change the number of successes).  This yields a Beta distribution as the posterior. Note: As the prior distribution is in the same family as the posterior, we say the prior is conjugate for the likelihood."),
                                                    h4("This application corresponds to an example in ",span("Mathematical Statistics and Data Analysis",style = "font-style:italic"), "section 3.5, example E, by John Rice."),
@@ -37,11 +55,11 @@ ui <- dashboardPage(skin="red",
                                                )
                                         ),
                                         
-                                        column(6,
-                                               #How to use the app
-                                               h1("How to use the app?"),
-                                               #box to contain description
-                                               box(background="red",width=12,
+                                        column(4,
+                                               #how to navigate app
+                                               h1("Navigate the App"),
+                                               #box to contain navigation
+                                               box(background="purple",width=12,
                                                    h4("The controls for the app are located to the left and the visualizations are available on the right."),
                                                    h4("To change the number of successes observed (for example the number of coins landing head side up), the slider on the top left can be used."),
                                                    h4("To change the prior distribution, the hyperparameters can be set using the input boxes on the left.  The changes in this distribution can be seen on the first graph."),
@@ -51,35 +69,78 @@ ui <- dashboardPage(skin="red",
                                     )
                             ),
                             
-                            #actual app layout      
+                            #app tab layout      
                             tabItem(tabName = "app",
                                     fluidRow(
                                         column(width=3,
-                                               box(width=12,background="red",sliderInput("yvalue","Y=Number of Successes",min = 0,max = 30,value = 15)
+                                               box(width=12,
+                                                   title="Beer Styles by State Parameter",
+                                                   background="purple",
+                                                   selectizeInput("state", "State", selected = "NC", choices = levels(as.factor(beerData$state)))
                                                ),
                                                box(width=12,
-                                                   title="Hyperparameters of the prior distribution for \\(\\Theta\\)",
-                                                   background="red",
+                                                   title="ABV Distribution Parameter",
+                                                   background="purple",
                                                    solidHeader=TRUE,
-                                                   p("\\(\\frac{\\Gamma(\\alpha+\\beta)}{\\Gamma(\\alpha)\\Gamma(\\beta)}\\theta^{\\alpha-1}(1-\\theta)^{\\beta-1}\\)"),
-                                                   h5("(Set to 1 if blank.)"),
-                                                   numericInput("alpha",label=h5("\\(\\alpha\\) Value (> 0)"),value=1,min=0,step=0.1),
-                                                   numericInput("beta",label=h5("\\(\\beta\\) Value (> 0)"),value=1,min=0,step=0.1)
+                                                   sliderInput("bins", "Number of Bins", min = 1, max = 50, value = 25)
                                                )
                                         ),
                                         column(width=9,
                                                fluidRow(
-                                                   box(width=6,
-                                                       plotOutput("priorPlot"),
+                                                   box(width=5,
+                                                       tableOutput("numSum"),
                                                        br(),
-                                                       h4("Prior distribution for the probability of success parameter \\(\\Theta\\).")
+                                                       h4("Count of Beer Styles by State")
                                                    ),
-                                                   box(width=6,
-                                                       plotOutput("distPlot"),
+                                                   box(width=7,
+                                                       plotOutput("graphSum"),
                                                        br(),
-                                                       h4("Posterior distribution for the probability of success \\(\\Theta\\).")
+                                                       h4("Distribution of All Beer ABV")
                                                    )
                                                )
+                                        )
+                                    )
+                            ),
+                            
+                            #cluster tab layout      
+                            tabItem(tabName = "cluster",
+                                    fluidRow(
+                                        column(width=4,
+                                               box(width=12,
+                                                   title="Cluster plot",
+                                                   background="purple",
+                                               )
+                                        ),
+                                        column(width=8,
+                                               box(width=12,
+                                                   plotOutput("cluster"),
+                                                   br(),
+                                                   h4("Cluster plot")
+                                               )
+                                        )
+                                    )
+                            ),
+                            
+                            #model tab layout      
+                            tabItem(tabName = "model",
+                                    fluidRow(
+                                        column(width=4,
+                                               
+                                        ),
+                                        column(width=8,
+                                               
+                                        )
+                                    )
+                            ),
+                            
+                            #export tab layout      
+                            tabItem(tabName = "export",
+                                    fluidRow(
+                                        column(width=5,
+                                               
+                                        ),
+                                        column(width=7,
+                                               
                                         )
                                     )
                             )
@@ -87,50 +148,46 @@ ui <- dashboardPage(skin="red",
                     )
 )
 
-# Define server logic required to draw the plots
+#server logic required to create output
 server <- shinyServer(function(input, output) {
     
-    #Create prior plot output
-    output$priorPlot<-renderPlot({
+    #create numeric summary
+    output$numSum<-renderTable({
         
-        #Plotting sequence
-        x <- seq(from=0,to=1,by=0.01)
+        #get value from input
+        #state <- input$state
         
-        #get alpha and beta values from input
-        alphaval<-input$alpha
-        betaval<-input$beta
+        #set default if not supplied
+        #if (is.na(state)){state<-"NC"}
         
-        #set defaults if not supplied
-        if (is.na(alphaval)){alphaval<-1}
-        if (is.na(betaval)){betaval<-1}
+        #create function to get data based on input
+        getData <- reactive({
+            newData <- beerData %>% filter(state == input$state) %>% select(style) %>% na.omit()
+        })
         
-        #draw the prior distribution plot
-        plot(x=x,y=dbeta(x=x,shape1=alphaval,shape2=betaval),main="Prior Density for Theta",xlab="theta's", ylab="f(theta)",type="l")
+        #x <- beerData %>% filter(state==state) %>% select(style) %>% na.omit() 
+        table(getData())
         
     })
     
-    #create posterior plot  
-    output$distPlot <- renderPlot({
+    #create graphical summary  
+    output$graphSum <- renderPlot({
         
-        #Plotting sequence
-        x    <- seq(from=0,to=1,by=0.01)
+        #select data to plot
+        x <- beerData$abv %>% na.omit()
         
-        #number of success from input slider
-        numsuccess <- input$yvalue
+        #get value from input
+        bins <- input$bins
         
-        #get alpha and beta values from input
-        alphaval<-input$alpha
-        betaval<-input$beta
+        #set default if not supplied
+        if (is.na(bins)){bins<-25}
         
-        #sample size
-        n<-30
+        #set bins based on input
+        binNum <- seq(min(x), max(x), length.out=bins+1)
         
-        #set defaults if not supplied
-        if (is.na(alphaval)){alphaval<-1}
-        if (is.na(betaval)){betaval<-1}
+        #plot the numeric summary
+        hist(x=x, breaks = binNum, main="Distribution of Alcohol By Volume",xlab="ABV", ylab="Count",type="l")
         
-        # draw the posterior
-        plot(x=x,y=dbeta(x=x,shape1=numsuccess+alphaval,shape2=n-numsuccess+betaval),main=paste("Posterior Density for Theta|Y=",numsuccess,sep=""),xlab="theta's", ylab="f(theta|y)",type="l")
     })
     
 })
