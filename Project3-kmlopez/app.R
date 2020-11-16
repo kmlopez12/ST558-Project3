@@ -1,6 +1,5 @@
 #Project 3 Karen Lopez Nov. 18, 2020
 #code from video 3 used as template for shiny app practice
-#ABV to predict style? style to predict brewery?
 
 library(shiny)
 library(shinydashboard)
@@ -128,10 +127,18 @@ ui <- dashboardPage(skin="purple",
                             tabItem(tabName = "model",
                                     fluidRow(
                                         column(width=4,
-                                               
+                                               box(width=12,
+                                                   title="",
+                                                   background="purple"
+                                                   
+                                               )
                                         ),
                                         column(width=8,
-                                               
+                                               box(width=12,
+                                                   plotOutput("modelP"),
+                                                   br(),
+                                                   h4("Model")
+                                               )
                                         )
                                     )
                             ),
@@ -139,11 +146,17 @@ ui <- dashboardPage(skin="purple",
                             #export tab layout      
                             tabItem(tabName = "export",
                                     fluidRow(
-                                        column(width=5,
-                                               
+                                        column(width=6,
+                                               box(width=12,
+                                                   title="",
+                                                   background="purple"
+                                                   
+                                               )
                                         ),
-                                        column(width=7,
-                                               
+                                        column(width=6,
+                                               box(width=12
+                                                   
+                                               )
                                         )
                                     )
                             )
@@ -209,6 +222,7 @@ server <- shinyServer(function(input, output) {
     })
     
     #create model
+    #ABV to predict style? style to predict brewery?
     
     #create output file
     
