@@ -5,7 +5,7 @@ final exam project
 
 code to add all packages:  
 
-library(c("shiny", "shinydashboard", "tidyverse"))  
+library(c("shiny", "shinydashboard", "tidyverse", "tree", "randomForest"))  
 
 ### Run repo
 

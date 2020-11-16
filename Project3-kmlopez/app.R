@@ -4,6 +4,8 @@
 library(shiny)
 library(shinydashboard)
 library(tidyverse)
+library(tree)
+library(randomForest)
 beerData <- read_csv("../beer.csv")
 beerData <- beerData %>% na.omit()
 
@@ -133,10 +135,10 @@ ui <- dashboardPage(skin="purple",
                                                    #parameters for user to change
                                                    radioButtons("model","Select Model", choices = c("Classification via ABV", "Regression via Style")),
                                                    conditionalPanel(condition = "input.model == 'Classification via ABV'",
-                                                                    selectInput("classReponse", "Classification Response", choices = c("Brewery", "Style"))),
+                                                                    selectInput("classResponse", "Classification Response", choices = c("brewery_name", "style"))),
                                                    conditionalPanel(condition = "input.model == 'Regression via Style'", 
-                                                                    selectInput("regResponse", "Regression Response", choices = c("Brewery", "ABV"))),
-                                                   numericInput("trees", "Number of Trees", min=1, max=10, value=2),
+                                                                    selectInput("regResponse", "Regression Response", choices = c("brewery_id", "abv"))),
+                                                   numericInput("trees", "Number of Trees", min=100, max=500, step = 100, value=200),
                                                    #add checkbox for prediction
                                                    checkboxInput("prediction", h5("Turn on Prediction", style = "color:white;", value=0)),
                                                    #add conditionalPanel for predictor
@@ -235,7 +237,6 @@ server <- shinyServer(function(input, output) {
     #create models
     output$modelP <- renderPlot({
         
-        #
         #input$model
         #choices = c("Classification via ABV", "Regression via Style")
         
@@ -245,22 +246,43 @@ server <- shinyServer(function(input, output) {
         #input$regResponse
         #choices = c("Brewery", "ABV")
         
-        #
         #input$trees
         
-        #add checkbox for prediction
-        if(input$prediction){
-            
+        #create variables
+        treeFit <- NULL
+        predictor <- NULL
+        
+        #subset data for prediction, 80% train & 20% test
+        set.seed(12)
+        train <- sample(1:nrow(beerData), size = nrow(beerData)*0.8)
+        test <- dplyr::setdiff(1:nrow(beerData), train)
+        beerTrain <- beerData[train, ]
+        beerTest <- beerData[test, ]
+        
+        #create tree model based on user input
+        if(input$model=="Classification via ABV"){
+            #classification tree model
+            predictor <- "abv"
+            treeFit <- tree(input$classResponse ~ abv, data = beerData)
+            plot(treeFit)
+            text(treeFit)
         } else {
-            
+            #regression random forest tree model
+            predictor <- "style"
+            treeFit <- randomForest(input$regResponse ~ style, data = beerTrain, mtry = ncol(beerTrain)/3, ntree = input$trees, importance = TRUE)
         }
         
         #add option for predictor, conditional on prediction
-        if(input$predictor){
+#        if(input$predictor){
+#            predict(treeFit, newData = data.frame(predictor = input$predictor))
+#            predict(treeFit, newData = dplyr::select(beerTrain, -input$regResponse))
+#        } else {
             
-        } else {
-            
-        }
+#        }
+        
+        #create tree plot
+        plot(treeFit)
+        text(treeFit)
         
     })
     
