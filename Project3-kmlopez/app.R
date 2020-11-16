@@ -151,9 +151,8 @@ ui <- dashboardPage(skin="purple",
                                         ),
                                         column(width=8,
                                                box(width=12,
-                                                   plotOutput("modelP"),
-                                                   br(),
-                                                   h4("Model")
+                                                   h4("Tree Model"),
+                                                   plotOutput("modelP")
                                                )
                                         )
                                     )
@@ -164,15 +163,20 @@ ui <- dashboardPage(skin="purple",
                                     fluidRow(
                                         column(width=6,
                                                box(width=12,
-                                                   title="",
-                                                   background="purple"
+                                                   title="Table Options",
+                                                   background="purple",
+                                                   actionButton("export", "Export File")
                                                    
                                                )
                                         ),
                                         column(width=6,
-                                               box(width=12
-                                                   
+                                               box(width=12,
+                                                   title="Table Preview",
+                                                   tableOutput("preview")
                                                )
+                                               
+                                               
+                                            
                                         )
                                     )
                             )
@@ -290,7 +294,11 @@ server <- shinyServer(function(input, output) {
     })
     
     #create output file
-    
+    output$preview <- renderTable({
+        #use inputs from user (make reactive)
+        
+        #export table when button is clicked
+    })
 })
 
 shinyApp(ui = ui, server = server)
