@@ -336,7 +336,7 @@ server <- shinyServer(function(input, output) {
     output$export <- downloadHandler(
         
         #export table when button is clicked
-        filename = function(){"beerDataSub.csv"}
+        filename = function(){"beerDataSub.csv"},
         content = function(file){
             write.csv(getExport(), file)
         }
