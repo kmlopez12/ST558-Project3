@@ -161,16 +161,16 @@ ui <- dashboardPage(skin="purple",
                                                box(width=12,
                                                    title="CSV Export Options",
                                                    background="purple",
-                                                   selectInput("var1", "Variable 1", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var2", "Variable 2", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var3", "Variable 3", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var4", "Variable 4", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var5", "Variable 5", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var6", "Variable 6", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var7", "Variable 7", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var8", "Variable 8", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var9", "Variable 9", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
-                                                   selectInput("var10", "Variable 10", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var1", "Variable 1", choices = c("abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var2", "Variable 2", choices = c("ibu", "abv", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var3", "Variable 3", choices = c("id", "abv", "ibu", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var4", "Variable 4", choices = c("beer_name", "abv", "ibu", "id", "style", "brewery_id", "ounces", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var5", "Variable 5", choices = c("style", "abv", "ibu", "id", "beer_name", "brewery_id", "ounces", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var6", "Variable 6", choices = c("brewery_id","abv", "ibu", "id", "beer_name", "style",  "ounces", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var7", "Variable 7", choices = c("ounces", "abv", "ibu", "id", "beer_name", "style", "brewery_id", "brewery_name", "city", "state", "none")),
+                                                   selectInput("var8", "Variable 8", choices = c("brewery_name", "abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "city", "state", "none")),
+                                                   selectInput("var9", "Variable 9", choices = c("city", "abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "state", "none")),
+                                                   selectInput("var10", "Variable 10", choices = c("state", "abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "none")),
                                                    downloadButton("export", "Export File")
                                                )
                                         ),
@@ -304,6 +304,7 @@ server <- shinyServer(function(input, output) {
         #beerData[, 2:11]
     })
     
+    #function for subsetting data based on user input
     getExport <- reactive({
         #create empty list
         columns <- ""
@@ -332,15 +333,15 @@ server <- shinyServer(function(input, output) {
         beerDataSub <- beerData[, columns]
     })
     
-    output$export <- downloadHandler({
+    output$export <- downloadHandler(
         
         #export table when button is clicked
-        filename <- function(){"beerDataSub.csv"}
-        content <- function(file){
+        filename = function(){"beerDataSub.csv"}
+        content = function(file){
             write.csv(getExport(), file)
         }
         
-    })
+    )
     
 })
 
