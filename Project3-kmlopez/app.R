@@ -6,15 +6,16 @@ library(shinydashboard)
 library(tidyverse)
 library(tree)
 library(randomForest)
+library(knitr)
 beerData <- read_csv("../beer.csv")
 beerData <- beerData %>% na.omit()
 
 ui <- dashboardPage(skin="purple",
                     
                     #add title
-                    dashboardHeader(title="Analysis of Beer Data",titleWidth=1000),
+                    dashboardHeader(title="Analysis of Beer Data", titleWidth=1000),
                     
-                    #create sidebar items
+                    #create sidebar with 5 tabs
                     dashboardSidebar(sidebarMenu(
                         menuItem("Information", tabName = "about", icon = icon("archive")),
                         menuItem("Data Exploration", tabName = "app", icon = icon("laptop")),
@@ -38,39 +39,34 @@ ui <- dashboardPage(skin="purple",
                                                h1("About the Data"),
                                                #box to contain description
                                                box(background="purple",width=12,
-                                                   h4("This data contains over 2000 canned craft beers and over 500 breweries in the US. Two data sets were downloaded from kaggle.com and then combined into one larger data set for this application."),
-                                                   h4("The prior distribution is assumed to be a Beta distribution and the likelihood is a Binomial distribution with 30 trials (of which you can change the number of successes).  This yields a Beta distribution as the posterior. Note: As the prior distribution is in the same family as the posterior, we say the prior is conjugate for the likelihood."),
-                                                   h4("The goal of the example is to update our belief about the parameter \\(\\Theta\\) = the probability of obtaining a head when a particular coin is flipped.  The experiment is to flip the coin 30 times and observe the number of heads. The likelihood is then a binomial distribution. The prior is assumed to be a Beta distribution.")
+                                                   h4(HTML("The data used in this application contains over 2000 canned craft beers and over 500 breweries in the United States. The two data sets that were downloaded from kaggle.com and combined to create this data set are <a href=https://www.kaggle.com/nickhould/craft-cans?select=beers.csv>beers.csv</a> and <a href=https://www.kaggle.com/nickhould/craft-cans?select=breweries.csv>breweries.csv</a>.")),
+                                                   h4("The data set includes information such as abv (alcohol by volume), ibu, numeric beer id, beer name, beer style, ounces, brewery name, brewery city, and brewery state. To avoid errors in analysis, any entries with NA values are removed. According to the description, this data was collected in January 2017 from CraftCans.com, which is currently a suspended site.")
                                                )
                                         ),
                                         
                                         column(4,
                                                #purpose of app
-                                               h1("Purpose of the App"),
+                                               h1("App Purpose"),
                                                #box to contain purpose
                                                box(background="purple",width=12,
-                                                   h4("This application shows the relationship between the prior distribution and the posterior distribution for a simple Bayesian model."),
-                                                   h4("The prior distribution is assumed to be a Beta distribution and the likelihood is a Binomial distribution with 30 trials (of which you can change the number of successes).  This yields a Beta distribution as the posterior. Note: As the prior distribution is in the same family as the posterior, we say the prior is conjugate for the likelihood."),
-                                                   h4("This application corresponds to an example in ",span("Mathematical Statistics and Data Analysis",style = "font-style:italic"), "section 3.5, example E, by John Rice."),
-                                                   h4("The goal of the example is to update our belief about the parameter \\(\\Theta\\) = the probability of obtaining a head when a particular coin is flipped.  The experiment is to flip the coin 30 times and observe the number of heads. The likelihood is then a binomial distribution. The prior is assumed to be a Beta distribution.")
+                                                   h4("This application provides a means to explore the beer data, demonstrates ways to explore relationships in the data, and allows for export of desired parts of the data. This data set does not have a large set of variables, but this application can easily be edited to conform to larger data sets with more variables. Some of the relationships are explored via numerical and categorical plots, clustering analysis, and tree modeling."),
+                                                   h4("Most of the relationships demonstrated in this application are not as meaningful as originally desired, but serves as examples of what can be done with beer data. Ideally, a data set with additional variables, such as shelf life, rating, average price, production cost, time to sell out, and distribution radius, would result in more useful analyses.")
                                                )
                                         ),
                                         
                                         column(4,
                                                #how to navigate app
-                                               h1("Navigate the App"),
+                                               h1("App Navigation"),
                                                #box to contain navigation
                                                box(background="purple",width=12,
-                                                   h4("The controls for the app are located to the left and the visualizations are available on the right."),
-                                                   h4("To change the number of successes observed (for example the number of coins landing head side up), the slider on the top left can be used."),
-                                                   h4("To change the prior distribution, the hyperparameters can be set using the input boxes on the left.  The changes in this distribution can be seen on the first graph."),
-                                                   h4("The resulting changes to the posterior distribution can be seen on the second graph.")
+                                                   h4(HTML("There are four tabs in the navigation panel that lead to the four utilities of this application. <b>Data Exploration</b> contains data summaries, <b>Clustering Analysis</b> contains a k-means cluster analysis, <b>Data Modeling</b> contains classification and regression tree models, and <b>Exporting Data</b> allows for reviewing, subsetting, and saving the data.")),
+                                                   h4("Each tab has controls on the left side that can be modified by the user. The resulting changes are viewed in the visualizations that are located to the right of the input controls. These controls vary from drop-down menus to selection, and some even cause secondary controls to appear.")
                                                )
                                         )
                                     )
                             ),
                             
-                            #app tab layout      
+                            #app tab layout
                             tabItem(tabName = "app",
                                     fluidRow(
                                         column(width=3,
@@ -103,7 +99,7 @@ ui <- dashboardPage(skin="purple",
                                     )
                             ),
                             
-                            #cluster tab layout      
+                            #cluster tab layout
                             tabItem(tabName = "cluster",
                                     fluidRow(
                                         column(width=3,
@@ -125,7 +121,7 @@ ui <- dashboardPage(skin="purple",
                                     )
                             ),
                             
-                            #model tab layout      
+                            #model tab layout
                             tabItem(tabName = "model",
                                     fluidRow(
                                         column(width=4,
@@ -158,21 +154,30 @@ ui <- dashboardPage(skin="purple",
                                     )
                             ),
                             
-                            #export tab layout      
+                            #export tab layout
                             tabItem(tabName = "export",
                                     fluidRow(
-                                        column(width=6,
+                                        column(width=3,
                                                box(width=12,
-                                                   title="Table Options",
+                                                   title="CSV Export Options",
                                                    background="purple",
-                                                   actionButton("export", "Export File")
-                                                   
+                                                   selectInput("var1", "Variable 1", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var2", "Variable 2", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var3", "Variable 3", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var4", "Variable 4", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var5", "Variable 5", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var6", "Variable 6", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var7", "Variable 7", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var8", "Variable 8", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var9", "Variable 9", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   selectInput("var10", "Variable 10", choices = c("none","abv", "ibu", "id", "beer_name", "style", "brewery_id", "ounces", "brewery_name", "city", "state")),
+                                                   downloadButton("export", "Export File")
                                                )
                                         ),
-                                        column(width=6,
+                                        column(width=9,
                                                box(width=12,
-                                                   title="Table Preview",
-                                                   tableOutput("preview")
+                                                   title="Preview All Data",
+                                                   DT::dataTableOutput("preview")
                                                )
                                                
                                                
@@ -294,11 +299,49 @@ server <- shinyServer(function(input, output) {
     })
     
     #create output file
-    output$preview <- renderTable({
-        #use inputs from user (make reactive)
+    output$preview <- DT::renderDataTable({
+        #allow user to scroll through data 
+        #beerData[, 2:11]
+    })
+    
+    getExport <- reactive({
+        #create empty list
+        columns <- ""
+        
+        #grab user input
+        var1 <- input$var1
+        var2 <- input$var2
+        var3 <- input$var3
+        var4 <- input$var4
+        var5 <- input$var5
+        var6 <- input$var6
+        var7 <- input$var7
+        var8 <- input$var8
+        var9 <- input$var9
+        var10 <- input$var10
+        
+        for(i in 1:10){
+            if(paste0("input$var", i)!="none"){
+                columns <- c(columns, paste0("input$var", i, ", "))
+            }
+        }
+        #subset the string to remove last 2 characters
+        columns <- substring(columns, first = 1, last = nchar(columns)-2)
+        
+        #use columns from user to subset data
+        beerDataSub <- beerData[, columns]
+    })
+    
+    output$export <- downloadHandler({
         
         #export table when button is clicked
+        filename <- function(){"beerDataSub.csv"}
+        content <- function(file){
+            write.csv(getExport(), file)
+        }
+        
     })
+    
 })
 
 shinyApp(ui = ui, server = server)
