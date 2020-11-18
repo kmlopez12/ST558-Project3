@@ -8,6 +8,7 @@ library(tree)
 library(randomForest)
 library(knitr)
 library(ggplot2)
+library(plotly)
 beerData <- read_csv("../beer.csv")
 beerData <- beerData %>% na.omit()
 
@@ -60,7 +61,7 @@ ui <- dashboardPage(skin="purple",
                                                h1("App Navigation"),
                                                #box to contain navigation
                                                box(background="purple",width=12,
-                                                   h4(HTML("There are four tabs in the navigation panel that lead to the four utilities of this application. <b>Data Exploration</b> contains data summaries, <b>Clustering Analysis</b> contains a k-means cluster analysis, <b>Data Modeling</b> contains classification and regression tree models, and <b>Exporting Data</b> allows for reviewing, subsetting, and saving the data.")),
+                                                   h4(HTML("There are four tabs in the navigation panel that lead to the four utilities of this application. <b>Data Exploration</b> contains a numeric summary and saveable/interactive plotly histogram, <b>Clustering Analysis</b> contains a saveable k-means cluster analysis, <b>Data Modeling</b> contains classification and regression tree models, and <b>Exporting Data</b> allows for reviewing, subsetting, and saving the data.")),
                                                    h4("Each tab has controls on the left side that can be modified by the user. The resulting changes are viewed in the visualizations that are located to the right of the input controls. These controls vary from drop-down menus to selection, and some even cause secondary controls to appear.")
                                                )
                                         )
@@ -91,7 +92,7 @@ ui <- dashboardPage(skin="purple",
                                                        h4("Count of Beer Styles by State")
                                                    ),
                                                    box(width=7,
-                                                       plotOutput("graphSum"),
+                                                       plotlyOutput("graphSum"),
                                                        br(),
                                                        h4("Distribution of All Beer ABV")
                                                    )
@@ -194,7 +195,7 @@ ui <- dashboardPage(skin="purple",
 )
 
 #server logic required to create output
-server <- shinyServer(function(input, output) {
+server <- shinyServer(function(input, output, session) {
     
     #create numeric summary
     output$numSum<-renderTable({
@@ -210,10 +211,10 @@ server <- shinyServer(function(input, output) {
     })
     
     #create graphical summary  
-    output$graphSum <- renderPlot({
+    output$graphSum <- renderPlotly({
         
         #select data to plot
-        x <- beerData$abv %>% na.omit()
+        #x <- beerData$abv %>% na.omit()
         
         #get value from input
         bins <- input$bins
@@ -222,11 +223,16 @@ server <- shinyServer(function(input, output) {
         if (is.na(bins)){bins<-25}
         
         #set bins based on input
-        binNum <- seq(min(x), max(x), length.out=bins+1)
+        #binNum <- seq(min(x), max(x), length.out=bins+1)
         
         #plot the numeric summary
-        hist(x=x, breaks = binNum, main="Distribution of Alcohol By Volume",xlab="ABV", ylab="Count",type="l")
+        #hist(x=x, breaks = binNum, main="Distribution of Alcohol By Volume",xlab="ABV", ylab="Count",type="l")
         
+        #converted plot to plotly so user can hover over plot
+        #plot_ly(x = ~beerData$abv, type = "histogram")
+        
+        p <- ggplot(beerData, aes(abv)) + geom_histogram(bins=bins)
+        ggplotly(p)
     })
     
     #create cluster plot
@@ -258,7 +264,7 @@ server <- shinyServer(function(input, output) {
             beerData[, c(input$xvar, input$yvar)] %>% na.omit()
         }),
         
-        filename = "clusterPlot.png",
+        filename = function(){"clusterPlot.png"},
         content = function(file){
             ggsave(file, subData())
         }
@@ -340,8 +346,8 @@ server <- shinyServer(function(input, output) {
         var10 <- input$var10
         
         for(i in 1:10){
-            if(paste0("input$var", i)!="none"){
-                columns <- paste0(columns, paste0(input$var, i, ", "))
+            if(paste0("var", i)!="none"){
+                columns <- paste0(columns, paste0(var, i, ", "))
             }
         }
         #subset the string to remove last 2 characters
@@ -353,11 +359,10 @@ server <- shinyServer(function(input, output) {
     
     output$export <- downloadHandler(
         #export table when button is clicked
-        filename = "beerDataSub.csv",
+        filename = function(){"beerDataSub.csv"},
         content = function(file){
             write.csv(getExport(), file)
         }
-        
     )
     
 })
