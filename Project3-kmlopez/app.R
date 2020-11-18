@@ -229,8 +229,6 @@ server <- shinyServer(function(input, output, session) {
         #hist(x=x, breaks = binNum, main="Distribution of Alcohol By Volume",xlab="ABV", ylab="Count",type="l")
         
         #converted plot to plotly so user can hover over plot
-        #plot_ly(x = ~beerData$abv, type = "histogram")
-        
         p <- ggplot(beerData, aes(abv)) + geom_histogram(bins=bins)
         ggplotly(p)
     })
