@@ -7,6 +7,7 @@ library(tidyverse)
 library(tree)
 library(randomForest)
 library(knitr)
+library(ggplot2)
 beerData <- read_csv("../beer.csv")
 beerData <- beerData %>% na.omit()
 
@@ -108,7 +109,8 @@ ui <- dashboardPage(skin="purple",
                                                    background="purple",
                                                    selectInput("xvar","X Variable", choices = c("abv","ibu","id","brewery_id", "ounces")),
                                                    selectInput("yvar","Y Variable", choices = c("abv","ibu","id","brewery_id", "ounces")),
-                                                   numericInput("clusterCount", "Cluster Count", min=1, max=9, value=5)
+                                                   numericInput("clusterCount", "Cluster Count", min=1, max=9, value=5),
+                                                   downloadButton("savePlot", "Save Plot")
                                                )
                                         ),
                                         column(width=9,
@@ -129,10 +131,12 @@ ui <- dashboardPage(skin="purple",
                                                    title="Modeling Options",
                                                    background="purple",
                                                    #parameters for user to change
-                                                   radioButtons("model","Select Model", choices = c("Classification via ABV", "Regression via Style")),
+                                                   radioButtons("model","Select Model (m = randomly selected predictors)", choices = c("Classification via ABV", "Regression via Style")),
                                                    conditionalPanel(condition = "input.model == 'Classification via ABV'",
+                                                                    withMathJax(h5("$$m = \\sqrt{p}$$")),
                                                                     selectInput("classResponse", "Classification Response", choices = c("brewery_name", "style"))),
                                                    conditionalPanel(condition = "input.model == 'Regression via Style'", 
+                                                                    withMathJax(h5("$$m = \\frac{p}{3}$$")),
                                                                     selectInput("regResponse", "Regression Response", choices = c("brewery_id", "abv"))),
                                                    numericInput("trees", "Number of Trees", min=100, max=500, step = 100, value=200),
                                                    #add checkbox for prediction
@@ -246,6 +250,20 @@ server <- shinyServer(function(input, output) {
         
     })
     
+    #save cluster plot
+    output$savePlot <- downloadHandler(
+        
+        #subset data based on input
+        subData <- reactive({
+            beerData[, c(input$xvar, input$yvar)] %>% na.omit()
+        }),
+        
+        filename = "clusterPlot.png",
+        content = function(file){
+            ggsave(file, subData())
+        }
+    )
+    
     #create models
     output$modelP <- renderPlot({
         
@@ -301,7 +319,7 @@ server <- shinyServer(function(input, output) {
     #create output file
     output$preview <- DT::renderDataTable({
         #allow user to scroll through data 
-        #beerData[, 2:11]
+        beerData[, 2:11]
     })
     
     #function for subsetting data based on user input
@@ -323,7 +341,7 @@ server <- shinyServer(function(input, output) {
         
         for(i in 1:10){
             if(paste0("input$var", i)!="none"){
-                columns <- c(columns, paste0("input$var", i, ", "))
+                columns <- paste0(columns, paste0(input$var, i, ", "))
             }
         }
         #subset the string to remove last 2 characters
@@ -334,9 +352,8 @@ server <- shinyServer(function(input, output) {
     })
     
     output$export <- downloadHandler(
-        
         #export table when button is clicked
-        filename = function(){"beerDataSub.csv"},
+        filename = "beerDataSub.csv",
         content = function(file){
             write.csv(getExport(), file)
         }
