@@ -276,15 +276,27 @@ server <- shinyServer(function(input, output, session) {
     
     #save cluster plot
     output$savePlot <- downloadHandler(
-        
+        plotPNG <- function(){
         #subset data based on input
         subData <- reactive({
             beerData[, c(input$xvar, input$yvar)] %>% na.omit()
-        }),
+        })
+        #use input to create cluster count
+        clusters <- reactive({
+            kmeans(subData(), input$clusterCount)
+        })
+        
+        #create color palette & plot, modified code from clustering lecture 
+        palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+        par(mar = c(4, 4, 1, 1)) #set plot margins
+        plot(subData(), col = clusters()$cluster, pch = 20, cex = 3, main="k-means Clustering Analysis")
+        points(clusters()$centers, pch = 1, cex = 1, lwd = 1)
+        },
         #save .png file for when button is clicked
         filename = function(){"clusterPlot.png"},
         content = function(file){
-            ggsave(file, subData())
+            #ggsave(file, subData(), device = png)
+            ggsave(file, plotPNG(), device = png, width = 2, height = 2, units = "cm")#scale = 0.1) #image too large, even after reducing dimensions & scale
         }
     )
     
@@ -363,18 +375,6 @@ server <- shinyServer(function(input, output, session) {
     getExport <- reactive({
         #create empty list
         columns <- ""
-        
-        #grab user input
-        var1 <- input$var1
-        var2 <- input$var2
-        var3 <- input$var3
-        var4 <- input$var4
-        var5 <- input$var5
-        var6 <- input$var6
-        var7 <- input$var7
-        var8 <- input$var8
-        var9 <- input$var9
-        var10 <- input$var10
         
         for(i in 1:10){
             if(paste0("var", i)!="none"){
