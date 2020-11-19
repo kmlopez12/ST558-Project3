@@ -378,16 +378,18 @@ server <- shinyServer(function(input, output, session) {
         
         for(i in 1:10){
             if(paste0("var", i)!="none"){
-                columns <- paste0(columns, paste0(var, i, ", "))
+                columns <- paste0(as.character(columns), as.character(paste0(var, i, ", ")))
             }
-        }
+        } 
+        
         #subset the string to remove last 2 characters
         columns <- substring(columns, first = 1, last = nchar(columns)-2)
         
         #use columns from user to subset data
         beerDataSub <- beerData[, columns]
+        print(beerDataSub)
     })
-    
+    #browser()
     output$export <- downloadHandler(
         #export table when button is clicked
         filename = function(){"beerDataSub.csv"},
