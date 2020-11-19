@@ -152,10 +152,10 @@ ui <- dashboardPage(skin="purple",
                                                                     selectInput("regResponse", "Regression Response", choices = c("brewery_id", "abv"))),
                                                    #add conditional panel for tree number
                                                    conditionalPanel(condition = "input.model == 'Regression via Style'",
-                                                       numericInput("trees", "Number of Trees", min=100, max=500, step = 100, value=200)
-                                                   ),
+                                                       numericInput("trees", "Number of Trees", min=100, max=500, step = 100, value=200),
                                                    #add checkbox for prediction
                                                    checkboxInput("prediction", h5("Turn on Prediction", style = "color:white;", value=0)),
+                                                   ),
                                                    #add conditionalPanel for predictor
                                                    conditionalPanel(condition = "input.prediction == 1",
                                                                     numericInput("predictor", h5("Number for Prediction", value=0, style = "color:white;"),min=0.01, max=10.00, value=1.00)
@@ -357,6 +357,45 @@ server <- shinyServer(function(input, output, session) {
     #browser()
     #create prediction
     output$prediction <- renderTable({
+        #create variables
+        treeFit <- NULL
+        predictor <- NULL
+        
+        #subset data for modeling, otherwise there are too many factors
+        beerDataSub <- head(beerData, n=100)
+        
+        #subset data for prediction, 80% train & 20% test
+        set.seed(12)
+        train <- sample(1:nrow(beerDataSub), size = nrow(beerDataSub)*0.8)
+        test <- dplyr::setdiff(1:nrow(beerDataSub), train)
+        beerTrain <- beerDataSub[train, ]
+        beerTest <- beerDataSub[test, ]
+        
+        #create tree model based on user input
+        if(input$model=="Classification via ABV"){
+            #classification tree model & plot
+            predictor <- "abv"
+            if(input$classResponse=="state"){
+                treeFit <- tree(as.factor(state) ~ abv, data = beerDataSub)
+                plot(treeFit)
+                text(treeFit)
+            } else {
+                treeFit <- tree(as.factor(brewery_name) ~ abv, data = beerDataSub)
+                plot(treeFit)
+                text(treeFit)
+            }
+        } else {
+            #regression random forest tree model & plot
+            predictor <- "style"
+            if(input$regResponse=="brewery_id"){
+                treeFit <- randomForest(as.factor(brewery_id) ~ style, data = beerTrain, mtry = ncol(beerTrain)/3, ntree = input$trees, importance = TRUE)
+                plot(treeFit)
+            } else {
+                treeFit <- randomForest(as.factor(abv) ~ style, data = beerTrain, mtry = ncol(beerTrain)/3, ntree = input$trees, importance = TRUE)
+                plot(treeFit)
+            }
+        }
+        
         #add option for predictor, conditional on prediction
         if(input$predictor && input$model=="Classification via ABV"){
             predict(treeFit, newData = data.frame(predictor = input$predictor))
